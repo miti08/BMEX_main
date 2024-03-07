@@ -53,7 +53,9 @@ never simple.
 - Lots and lots of RAM on your PC (minimum 32GB). If you don’t have this
   much you can ask for permission to use the Brain Health Lab server.
 
-- ## Go to NCBI SRA and search for the dataset of your choice. For reference, here are the BioProject accessions that we are going to use:
+- Go to NCBI SRA and search for the dataset of your choice. For
+  reference, here are the BioProject accessions that we are going to
+  use:
 
 ### Prefetching and processing SRA files
 
@@ -138,16 +140,59 @@ file.
 ### Preliminary deconvolution results
 
 Now that we have obtained the deconvolved fractions, let’s move on to
-visualizing the results. We will import the resulting csv file back into
-R. We will tidy up the data to make analysis easier using the tidyverse
-packages.
+visualizing the results. First load our necessary libraries.
+
+``` r
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+```
+
+We will import the resulting csv file back into R and do some minimal
+cleaning. This code is pretty horrible but it will do.
+
+``` r
+VAN_fractions<-read.csv("D:/VAN_data/BMEX/BMEX_main/VAN_cfRNA_fractions_05032024.csv")
+# Data tidying
+VAN_fractions <- VAN_fractions[-c(2,3,4)] #remove some duplicate columns and rows
+VAN_fractions <- VAN_fractions[-c(63,64),]
+VAN_fractions <-tibble(VAN_fractions)
+VAN_fractions<-rename(VAN_fractions, "C"=starts_with("C"), "T"=starts_with("T")) #rename columns for simplicity
+```
+
+We will tidy up the data to make analysis easier using the tidyverse
+packages. Tidying up here means that we basically pivot the table from a
+matrix to a list of observations (i.e. each row represent one sample,
+one cell_type, and its fraction)
+
+``` r
+tidy_data<-VAN_fractions %>% 
+  pivot_longer(
+    cols= matches("[TC]"),
+    names_to = "samples",
+    values_to= "fraction"
+  ) %>% 
+  mutate(group=if_else(substr(samples,1,1)=="C","control","ad")) %>%  
+  rename("cell_type"="X") %>%
+  mutate(percent=fraction*100)
+```
 
 To visualize the data, we will use possibly the greatest plotting
 package ever to be invented: ggplot2. We want to make some boxplots to
 see the full data distribution (I took a casual look at the data table
 and saw a lot of variance between samples, so I don’t want to just
-report the average). Let’s pick the top cell types by average fraction
-for easier visualization.
+report the average).
+
+``` r
+ggplot(filter(tidy_data, group=="control"), aes(x=percent,y=forcats::fct_reorder(cell_type, percent, .fun = median)))+
+  geom_boxplot() + geom_jitter()+
+  scale_y_discrete(label=function(x) stringr::str_trunc(x, 46)) 
+```
+
+![](notes_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+
+So that is quite a mess. Let’s zoom in on the top cell types by median
+fraction.
 
 We can see that the data is extremely varied. A lot of zero datapoints.
 
