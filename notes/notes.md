@@ -100,30 +100,70 @@ original pipeline which used `rsubread`.*
 
 ### Introduction
 
-Some people figured out how to extract cell-type data from RNA-seq data,
-and applied it to plasma cell-free transcriptome. This is done by
-referring to a whole body cell atlas called Tabula Sapiens. Disclaimer:
-I don’t really know anything about the math behind deconvolution and
-SVR.
+Cell-free RNA in plasma can represent a broad transcriptome of tissues
+around the body, however questions still remain about the role of the
+origin cell types of cfRNA transcripts, which can provide a lot of
+information into the pathogenesis of AD, maybe leading to a non-invasive
+way of studying AD progression.
 
-We are going to do the same thing to our data. It may or may not produce
-anything worthwhile, but let’s try anyway.
+To answer this question, Vorperian et al. used support vector regression
+to deconvolve cell types of origin from the plasma cell-free
+transcriptome. The deconvolution process is done by employing Tabula
+Sapiens, a multiple-donor whole-body cell atlas spanning 24 tissues and
+organs, to define a basis matrix whose gene set accurately and
+simultaneously resolved the distinct cell types in TSP.
 
-See reference
+They found that platelets, erythrocyte/erythroid progenitors and
+leukocytes comprised the majority of observed signal, as well as
+observing distinct transcriptional contributions from solid
+tissue-specific cell types from the intestine, liver, lungs, pancreas,
+heart, and kidney.
+
+We are going to do the same thing to our collected cfRNA data to see if
+there is anything interesting. Is there a difference between the cell
+type fractions of control and AD patients? Could these differences
+indicate any pathological process (e.g. inflammation)?
+
+See reference: Vorperian, S.K., Moufarrej, M.N., Tabula Sapiens
+Consortium. et al. Cell types of origin of the cell-free transcriptome.
+Nat Biotechnol 40, 855–861 (2022).
+<https://doi.org/10.1038/s41587-021-01188-9>
 
 ### Initial setup
 
-- Install anaconda:
-- Clone the github repository: sevahn/deconvolution
-- Create the conda environment:
+First you need to install anaconda if you haven’t done so already. If
+working with Windows, go to their website and download the installer. If
+working in WSL/Linux, go to this link and follow their instructions
+<https://conda.io/projects/conda/en/latest/user-guide/install/linux.html>
 
-The authors recommend CPM-normalized values
+Clone the github repository from the authors:
+(github.com/sevahn/deconvolution). The authors were very very nice
+people and made a tutorial on how to do this for common people like us.
+Bless them.
+
+Anyway, navigate to the `deconvolve_cfrna_tutorial` folder. Create the
+conda environment based on the yml file with something like
+`conda env create --file cfrna_deconv.yml`. It will download all the
+necessary packages like magic.
 
 ### Running the deconvolution scripts
 
-Navigate to the deconvolution tutorial folder
+First we need to prepare our cfRNA data. I have prepared a
+CPM-normalized count matrix of our data and placed it in the same
+folder.Why CPM? Because the Tabula Sapiens dataset that we are going to
+use to deconvolve uses CPM units.
 
-Edit the `sh_1.py` script file
+Don’t use log-transformed values for this (the authors say so very
+clearly and we should listen to them). Also made sure to format it so
+that **rows are genes** and **columns are samples**.
+
+Unzip the Tabula Sapiens basis matrix in the same directory that the
+authors have prepared for us. (Thanks!)
+
+Edit the `sh_1.py` script file to point to our dataset *In WSL/Linux,
+edit files from the command line by using `nano FILENAME`* Execute
+`sh_1.py` by typing `python sh_1.py`.It will spit out a .sh script file
+for every sample (We got 20 samples so we get 20 script files)
 
 Now, you can try to execute the resulting scripts, but Linux won’t let
 you do that yet. You need to set the files to be executable. This
@@ -131,11 +171,14 @@ command will set all .sh files in the folder to executable
 `chmod +x ./*.sh`
 
 We can finally run the scripts. You can execute them all at once by
-doing a for loop `for i in *.sh ; do ./$i ; done`
+doing a for loop `for i in *.sh ; do ./$i ; done` This took about 10
+minutes.
 
-Edit `merge2.py` similarly to point to the correct data files. Finally,
-run `merge2.py` to get the final fractions located in the fractions csv
-file.
+It will spit out a folder for each sample containing the data. Edit
+`merge2.py` similarly to point to the correct data files. This script
+will merge all the sample data into one convenient table. Finally, run
+`merge2.py` to get the final cell type fractions located in a fractions
+csv file.
 
 ### Preliminary deconvolution results
 
@@ -178,30 +221,88 @@ tidy_data<-VAN_fractions %>%
 ```
 
 To visualize the data, we will use possibly the greatest plotting
-package ever to be invented: ggplot2. We want to make some boxplots to
-see the full data distribution (I took a casual look at the data table
-and saw a lot of variance between samples, so I don’t want to just
-report the average).
+package ever to be invented, the swiss army knife of plotting:
+**ggplot2**. We want to make some boxplots to see the full data
+distribution . It would be tempting to make a pie chart, but I took a
+casual look at the data table and saw a lot of variance between samples,
+so reporting just the mean would be horribly misleading. We will
+separate our data into the two groups: control and AD
 
 ``` r
-ggplot(filter(tidy_data, group=="control"), aes(x=percent,y=forcats::fct_reorder(cell_type, percent, .fun = median)))+
-  geom_boxplot() + geom_jitter()+
-  scale_y_discrete(label=function(x) stringr::str_trunc(x, 46)) 
+control_plot1<-ggplot(filter(tidy_data, group=="control"), aes(x=percent,y=forcats::fct_reorder(cell_type, percent, .fun = median)))+
+  geom_boxplot() + geom_jitter(alpha=0.5)+
+  scale_y_discrete(label=function(x) stringr::str_trunc(x, 46))
+control_plot1 + labs(title="Cell type fraction of control group (n=10)",x="Percent",y="Cell types")
 ```
 
 ![](notes_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
 
-So that is quite a mess. Let’s zoom in on the top cell types by median
-fraction.
+``` r
+ad_plot1<-ggplot(filter(tidy_data, group=="ad"), aes(x=percent,y=forcats::fct_reorder(cell_type, percent, .fun = median)))+
+  geom_boxplot() + geom_jitter(alpha=0.5)+
+  scale_y_discrete(label=function(x) stringr::str_trunc(x, 46)) 
+ad_plot1 + labs(title="Cell type fraction of AD group (n=10)",x="Percent",y="Cell types")
+```
 
-We can see that the data is extremely varied. A lot of zero datapoints.
+![](notes_files/figure-gfm/unnamed-chunk-4-2.png)<!-- -->
 
-Cool! Next step is probably to perform proper statistical analyses to
-determine if there is a statistically significant difference in
-composition between control vs. AD plasma. Also, Tabula Sapiens does not
-cover all cell types, most notably excluding brain cells. Human Protein
-Atlas (HPA) RNA consensus dataset. Or we can narrow it down using
-single-cell RNA sequencing datasets.
+That is quite a mess. Let’s make another plot where we zoom in on the
+top 15 cell types by median fraction in the cfRNA sample. *warning this
+code is pretty horrible right now, i will fix it later*
+
+``` r
+# Compute the median
+control_median <- tidy_data |>
+  filter(group=="control") |>
+  group_by(cell_type) |>
+  summarize(median_fraction=median(percent)) |>
+  arrange(median_fraction)
+
+ad_median <- tidy_data |>
+  filter(group=="ad") |>
+  group_by(cell_type) |>
+  summarize(median_fraction=median(percent)) |>
+  arrange(median_fraction)
+
+##horrifically janky code
+
+control_plot_topmed<-ggplot(filter(tidy_data,group=="control",cell_type %in% slice_max(control_median,order_by = median_fraction,n=15)$cell_type),
+                            aes(x=percent,y=forcats::fct_reorder(cell_type, percent, .fun = median)))+
+  geom_boxplot() + geom_jitter(alpha=0.5)+
+  scale_y_discrete(label=function(x) stringr::str_trunc(x, 46))
+control_plot_topmed + labs(title="Cell type fraction of control group (n=10)",x="Percent",y="Cell types")
+```
+
+![](notes_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
+
+``` r
+ad_plot_topmed<-ggplot(filter(tidy_data,group=="ad",cell_type %in% slice_max(ad_median,order_by = median_fraction,n=15)$cell_type),                   aes(x=percent,y=forcats::fct_reorder(cell_type, percent, .fun = median)))+
+  geom_boxplot() + geom_jitter(alpha=0.5)+
+  scale_y_discrete(label=function(x) stringr::str_trunc(x, 46))
+ad_plot_topmed + labs(title="Cell type fraction of AD group (n=10)",x="Percent",y="Cell types")
+```
+
+![](notes_files/figure-gfm/unnamed-chunk-5-2.png)<!-- -->
+
+Well we can see that the data is quite noisy. A lot of samples came back
+with zero percent, and there are some high outliers. This might mean
+that our input cfRNA data is not high quality enough? (or I messed up
+something).
+
+It looks like the composition between the control and AD group is quite
+different. Of course it would be improper to conclude anything without
+some more proper statistical analyses, so that will be the next step. I
+will perform some analysis to determine if there is a statistically
+significant difference in composition between control vs. AD plasma.
+
+Once I finish processing the Toden data, I will also test the
+deconvolution on their dataset too see if it comes out better.
+
+In addition, Tabula Sapiens does not cover all cell types, most notably
+excluding brain cells. The authors also tested with the Human Protein
+Atlas (HPA) RNA consensus dataset, and narrowed it down further with
+single-cell seq datasets of specific tissue, so I should look into doing
+that next.
 
 ## Consensus co-expression network analysis
 
