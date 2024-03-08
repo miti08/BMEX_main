@@ -5,9 +5,8 @@ miti
 2024-03-04
 
 - [Introduction](#introduction)
-- [Step Zero: Downloading and processing RNA-seq data from NCBI Sequence
-  Read
-  Archive](#step-zero-downloading-and-processing-rna-seq-data-from-ncbi-sequence-read-archive)
+- [Downloading and processing RNA-seq data from NCBI Sequence Read
+  Archive](#downloading-and-processing-rna-seq-data-from-ncbi-sequence-read-archive)
   - [Prerequisites](#prerequisites)
   - [Prefetching and processing SRA
     files](#prefetching-and-processing-sra-files)
@@ -33,7 +32,7 @@ purposes, and possibly for future Brain Health Lab younglings.
 
 Future Thien might make it into a proper tutorial.
 
-## Step Zero: Downloading and processing RNA-seq data from NCBI Sequence Read Archive
+## Downloading and processing RNA-seq data from NCBI Sequence Read Archive
 
 I wish it was as simple as clicking a download button, but science is
 never simple.
@@ -55,7 +54,7 @@ never simple.
 
 - Go to NCBI SRA and search for the dataset of your choice. For
   reference, here are the BioProject accessions that we are going to
-  use:
+  use: <https://www.ncbi.nlm.nih.gov/bioproject/PRJNA574438/>
 
 ### Prefetching and processing SRA files
 
@@ -108,10 +107,11 @@ way of studying AD progression.
 
 To answer this question, Vorperian et al. used support vector regression
 to deconvolve cell types of origin from the plasma cell-free
-transcriptome. The deconvolution process is done by employing Tabula
-Sapiens, a multiple-donor whole-body cell atlas spanning 24 tissues and
-organs, to define a basis matrix whose gene set accurately and
-simultaneously resolved the distinct cell types in TSP.
+transcriptome. The deconvolution process is done by employing [Tabula
+Sapiens](https://tabula-sapiens-portal.ds.czbiohub.org/), a
+multiple-donor whole-body cell atlas spanning 24 tissues and organs, to
+define a basis matrix whose gene set accurately and simultaneously
+resolved the distinct cell types in TSP.
 
 They found that platelets, erythrocyte/erythroid progenitors and
 leukocytes comprised the majority of observed signal, as well as
@@ -209,15 +209,15 @@ matrix to a list of observations (i.e. each row represent one sample,
 one cell_type, and its fraction)
 
 ``` r
-tidy_data<-VAN_fractions %>% 
-  pivot_longer(
+tidy_data<-VAN_fractions |>
+  pivot_longer( #Pivot the table
     cols= matches("[TC]"),
     names_to = "samples",
     values_to= "fraction"
-  ) %>% 
-  mutate(group=if_else(substr(samples,1,1)=="C","control","ad")) %>%  
-  rename("cell_type"="X") %>%
-  mutate(percent=fraction*100)
+  ) |>
+  mutate(group=if_else(substr(samples,1,1)=="C","control","ad")) |> #Create a grouping variable for later
+  rename("cell_type"="X") |> #Rename column X to cell_type
+  mutate(percent=fraction*100) # Multiply fraction by 100 to get percentage
 ```
 
 To visualize the data, we will use possibly the greatest plotting
@@ -229,9 +229,9 @@ so reporting just the mean would be horribly misleading. We will
 separate our data into the two groups: control and AD
 
 ``` r
-control_plot1<-ggplot(filter(tidy_data, group=="control"), aes(x=percent,y=forcats::fct_reorder(cell_type, percent, .fun = median)))+
-  geom_boxplot() + geom_jitter(alpha=0.5)+
-  scale_y_discrete(label=function(x) stringr::str_trunc(x, 46))
+control_plot1<-ggplot(filter(tidy_data, group=="control"), aes(x=percent,y=forcats::fct_reorder(cell_type, percent, .fun = median)))+ #sorts by median, descending
+  geom_boxplot() + geom_jitter(alpha=0.5)+ #jitter aka add the individual datapoints to see outliers
+  scale_y_discrete(label=function(x) stringr::str_trunc(x, 46)) #Truncate cell_type labels
 control_plot1 + labs(title="Cell type fraction of control group (n=10)",x="Percent",y="Cell types")
 ```
 
@@ -298,11 +298,11 @@ significant difference in composition between control vs. AD plasma.
 Once I finish processing the Toden data, I will also test the
 deconvolution on their dataset too see if it comes out better.
 
-In addition, Tabula Sapiens does not cover all cell types, most notably
-excluding brain cells. The authors also tested with the Human Protein
-Atlas (HPA) RNA consensus dataset, and narrowed it down further with
-single-cell seq datasets of specific tissue, so I should look into doing
-that next.
+In addition, Tabula Sapiens does not cover all tissue types, so there
+are some potentially missing contributions from other sources. The
+authors also tested with the Human Protein Atlas (HPA) RNA consensus
+dataset, and narrowed it down further with single-cell seq datasets of
+specific tissue, so I should look into doing that next.
 
 ## Consensus co-expression network analysis
 

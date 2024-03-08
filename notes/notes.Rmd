@@ -22,7 +22,7 @@ I do not guarantee good or understandable writing in this, because this is basic
 
 Future Thien might make it into a proper tutorial.
 
-## Step Zero: Downloading and processing RNA-seq data from NCBI Sequence Read Archive
+## Downloading and processing RNA-seq data from NCBI Sequence Read Archive
 
 I wish it was as simple as clicking a download button, but science is never simple.
 
@@ -40,7 +40,7 @@ I wish it was as simple as clicking a download button, but science is never simp
     If you don't have this much you can ask for permission to use the Brain Health Lab server.
 
 -   Go to NCBI SRA and search for the dataset of your choice.
-    For reference, here are the BioProject accessions that we are going to use:
+    For reference, here are the BioProject accessions that we are going to use: https://www.ncbi.nlm.nih.gov/bioproject/PRJNA574438/
 
 ### Prefetching and processing SRA files
 
@@ -77,7 +77,7 @@ I found a package called `parallel-fastq-dump` that seems to be very helpful.
 
 Cell-free RNA in plasma can represent a broad transcriptome of tissues around the body, however questions still remain about the role of the origin cell types of cfRNA transcripts, which can provide a lot of information into the pathogenesis of AD, maybe leading to a non-invasive way of studying AD progression. 
 
-To answer this question, Vorperian et al. used support vector regression to deconvolve cell types of origin from the plasma cell-free transcriptome. The deconvolution process is done by employing Tabula Sapiens, a multiple-donor whole-body cell atlas spanning 24 tissues and organs, to define a basis matrix whose gene set accurately and simultaneously resolved the distinct cell types in TSP. 
+To answer this question, Vorperian et al. used support vector regression to deconvolve cell types of origin from the plasma cell-free transcriptome. The deconvolution process is done by employing [Tabula Sapiens](https://tabula-sapiens-portal.ds.czbiohub.org/), a multiple-donor whole-body cell atlas spanning 24 tissues and organs, to define a basis matrix whose gene set accurately and simultaneously resolved the distinct cell types in TSP. 
 
 They found that platelets, erythrocyte/erythroid progenitors and leukocytes comprised the majority of observed signal, as well as observing distinct transcriptional contributions from solid tissue-specific cell types from the intestine, liver, lungs, pancreas, heart, and kidney. 
 
@@ -211,7 +211,7 @@ It looks like the composition between the control and AD group is quite differen
 
 Once I finish processing the Toden data, I will also test the deconvolution on their dataset too see if it comes out better. 
 
-In addition, Tabula Sapiens does not cover all cell types, most notably excluding brain cells. 
+In addition, Tabula Sapiens does not cover all tissue types, so there are some potentially missing contributions from other sources. 
 The authors also tested with the Human Protein Atlas (HPA) RNA consensus dataset, and narrowed it down further with single-cell seq datasets of specific tissue, so I should look into doing that next.
 
 ## Consensus co-expression network analysis
